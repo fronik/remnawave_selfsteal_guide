@@ -5,36 +5,36 @@ This guide provides a step-by-step walkthrough for configuring the control panel
 
 We will begin with the basic setup of the Remnawave control panel.
 
-Step 0 — Updating and installing requirement tools
+# Step 0 — Updating and installing requirement tools
 
-# Updating entire system and installing curl
+## Updating entire system and installing curl
 `apt update && apt upgrade && apt install curl`
 
-Step 1 — Install Docker
+# Step 1 — Install Docker
 
-# Install Docker using the official convenience script
+## Install Docker using the official convenience script
 `curl -fsSL https://get.docker.com | sh`
 
-Step 2 — Download required files
+# Step 2 — Download required files
 
-# Create the project directory and enter it
+## Create the project directory and enter it
 `mkdir -p /opt/remnawave && cd /opt/remnawave`
 
-# Fetch the Docker Compose file
+## Fetch the Docker Compose file
 `curl -o docker-compose.yml https://raw.githubusercontent.com/remnawave/backend/refs/heads/main/docker-compose-prod.yml`
 
-# Fetch the sample environment file
+## Fetch the sample environment file
 `curl -o .env https://raw.githubusercontent.com/remnawave/backend/refs/heads/main/.env.sample`
 
-Step 3 — Configure .env
+# Step 3 — Configure .env
 
-# Generate JWT secrets used for auth and API token signing
+## Generate JWT secrets used for auth and API token signing
 `sed -i "s/^JWT_AUTH_SECRET=.*/JWT_AUTH_SECRET=$(openssl rand -hex 64)/" .env && sed -i "s/^JWT_API_TOKENS_SECRET=.*/JWT_API_TOKENS_SECRET=$(openssl rand -hex 64)/" .env`
 
-# Generate additional secrets for metrics and webhooks
+## Generate additional secrets for metrics and webhooks
 `sed -i "s/^METRICS_PASS=.*/METRICS_PASS=$(openssl rand -hex 64)/" .env && sed -i "s/^WEBHOOK_SECRET_HEADER=.*/WEBHOOK_SECRET_HEADER=$(openssl rand -hex 64)/" .env`
 
-# Rotate the Postgres password and keep DATABASE_URL in sync
+## Rotate the Postgres password and keep DATABASE_URL in sync
 `pw=$(openssl rand -hex 24) && sed -i "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=$pw/" .env && sed -i "s|^\(DATABASE_URL=\"postgresql://postgres:\)[^\@]*\(@.*\)|\1$pw\2|" .env`
 
 Set domains
@@ -47,16 +47,22 @@ SUB_PUBLIC_DOMAIN="sub.yourdomain.com"
 
 Change "panel.yourdomain.com" & "sub.yourdomain.com" on your domains
 
-Step 4 — Start the stack
+# Step 4 — Start the stack
 
-# Start containers and tail logs with timestamps
+## Start containers and tail logs with timestamps
 `docker compose up -d && docker compose logs -f -t`
 
-Step 5 — Point domain names to your server via DNS provider or registar
+# Step 5 — Point domain names to your server via DNS provider or register
+Add A records for IP servers:
+- panel.yourdomain.com
+- sub.yourdomain.com
+- node1.yourdomain.com
+- node2.yourdomain.com
+- node99.yourdomain.com
 
-Step 6 — Caddy configuration
+# Step 6 — Caddy configuration
 
-# Create a file called Caddyfile in the /opt/remnawave/caddy directory.
+## Create a file called Caddyfile in the /opt/remnawave/caddy directory.
 `mkdir -p /opt/remnawave/caddy && cd /opt/remnawave/caddy && nano Caddyfile`
 
 Paste the following configuration
@@ -110,11 +116,11 @@ volumes:
         name: caddy-ssl-data
 ```
 
-# Start the container
+## Start the container
 
 `docker compose up -d && docker compose logs -f -t`
 
-# Remnawave Subscription Page
+## Remnawave Subscription Page
 
 Creating docker-compose.yml file
 
@@ -144,18 +150,18 @@ networks:
         driver: bridge
         external: true
 ```
-# Start the container
+## Start the container
 
 `docker compose up -d && docker compose logs -f`
 
-Step 7 — Remnawave Node configuration
+# Step 7 — Remnawave Node configuration
 
 Open your second vps server, for node you created before
 
-# Updating entire system and installing curl
+## Updating entire system and installing curl
 `apt update && apt upgrade && apt install curl`
 
-# Install Docker using the official convenience script
+## Install Docker using the official convenience script
 `curl -fsSL https://get.docker.com | sh`
 
 Create project directory
@@ -166,7 +172,7 @@ Configure the .env file
 
 `nano .env`
 
-# .env file content
+## .env file content
 
 ```
 NODE_PORT=2222
@@ -176,7 +182,7 @@ SECRET_KEY=CERT_FROM_MAIN_PANEL
 Create docker-compose.yml file
 
 `nano docker-compose.yml`
-# docker-compose.yml file content
+## docker-compose.yml file content
 
 ```
 services:
@@ -189,11 +195,11 @@ services:
         env_file:
             - .env
 ```
-# Pulling container
+## Pulling container
 `docker compose up -d && docker compose logs -f`
 
-Step 8 — Selfsteal (SNI) Setup
-# Create the working directory and open Caddyfile for editing
+# Step 8 — Selfsteal (SNI) Setup
+## Create the working directory and open Caddyfile for editing
 `mkdir -p /opt/selfsteel && cd /opt/selfsteel && nano Caddyfile`
 
 Paste the following
@@ -235,7 +241,7 @@ https://{$SELF_STEAL_DOMAIN} {
     respond 204
 }
 ```
-# Configure environment variables
+## Configure environment variables
 `nano .env`
 
 Paste (replace steel.domain.com with your placeholder domain):
@@ -291,8 +297,8 @@ printf '%s\n' '<!doctype html><meta charset="utf-8"><title>Selfsteal</title><h1>
   > /opt/html/index.html
 ```
 
-Step 9
-# Xray config (Reality) — update via Panel 
+# Step 9
+## Xray config (Reality) — update via Panel 
 Note: The Shadowsocks inbound is optional and may be safely removed in the future if not required.
 
 ```
@@ -402,3 +408,6 @@ Note: The Shadowsocks inbound is optional and may be safely removed in the futur
   }
 }
 ```
+- Add `shortIds:` if needed
+- Create and replace  `publicKey` and `privateKey`
+- Add node servers to `serverNames` (node1.yourdomain.com, node2.yourdomain.com ...)
